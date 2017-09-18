@@ -14,6 +14,16 @@ def hello_world():
 def dashboard():
     return render_template("dashboard.html",CONTEXT=TOPIC_DICT)
 
+@app.route('/slashboard/')
+def slashboard():
+    try:
+        return render_template("dashboard.html",CONTEXT=TOPIC_DICT)
+    except Exception as e:
+        return render_template("500.html",CONTEXT=e)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
