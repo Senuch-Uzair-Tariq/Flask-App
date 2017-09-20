@@ -50,9 +50,27 @@
 
 <div class="container-fluid" style="min-height: 100%;width: 80%">
 
-{% block body %}
+    {% with messages = get_flashed_messages() %}
 
-{% endblock %}
+        {% if messages %}
+            {% for message in messages %}
+
+                <div class="alert alert-warning alert-dismissable" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="close">
+                    <span aria-hidden="true">
+                        &times;
+                    </span>
+                </button>
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block body %}
+
+    {% endblock %}
 
 </div>
 
