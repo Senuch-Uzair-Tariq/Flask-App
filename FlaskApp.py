@@ -1,5 +1,6 @@
 from flask import Flask,render_template,flash,request,url_for,redirect
 from content_management import Content
+from dbconnect import connection
 
 TOPIC_DICT=Content()
 
@@ -26,7 +27,6 @@ def slashboard():
 def login():
 
     error=None;
-
     try:
 
         if request.method=='POST':
@@ -45,6 +45,14 @@ def login():
     except Exception as e:
         #flash(e)
         return render_template("login.html",CONEXT=error)
+
+@app.route('/register/',methods=['GET','POST'])
+def register():
+    try:
+        c,conn = connection()
+        return "Okay"
+    except Exception as e:
+        return str(e)
 
 @app.errorhandler(404)
 @app.errorhandler(405)
