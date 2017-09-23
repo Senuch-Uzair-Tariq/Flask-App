@@ -1,4 +1,4 @@
-from flask import Flask,render_template,flash
+from flask import Flask,render_template,flash,request,url_for,redirect
 from content_management import Content
 
 TOPIC_DICT=Content()
@@ -13,7 +13,6 @@ def hello_world():
 
 @app.route('/dashboard/')
 def dashboard():
-    flash("Okay this is the flask message")
     return render_template("dashboard.html",CONTEXT=TOPIC_DICT)
 
 @app.route('/slashboard/')
@@ -23,9 +22,29 @@ def slashboard():
     except Exception as e:
         return render_template("500.html",CONTEXT=e)
 
-@app.route('/login/',methods=['POST'])
+@app.route('/login/',methods=['GET','POST'])
 def login():
-    return render_template("login.html")
+
+    error=None;
+
+    try:
+
+        if request.method=='POST':
+            attempted_username=request.form['username']
+            attempted_password=request.form['password']
+
+            #flash(attempted_username)
+            #flash(attempted_password)
+
+            if attempted_username=="admin" and attempted_password == "password":
+                return redirect(url_for('dashboard'))
+            else:
+                error="Invalid! Credentials."
+        return render_template('login.html',CONTEXT=error)
+
+    except Exception as e:
+        #flash(e)
+        return render_template("login.html",CONEXT=error)
 
 @app.errorhandler(404)
 @app.errorhandler(405)
