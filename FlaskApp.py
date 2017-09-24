@@ -62,15 +62,16 @@ def register():
             password=sha256_crypt.encrypt(str(form.password.data))
             c,conn=connection()
 
-            x=c.execute("SELECT * FROM users WHERE username=(%s)",(username))
+            c.execute("SELECT * FROM users WHERE username='"+username+"'")
 
-            if len(x)>0:
+            if len(c.fetchall())>0:
                 flash("This username is already taken,please choose a different one.")
                 return render_template('register.html',form=form)
             else:
-                c.execute("INSERT INTO users(username,password,email,tracking) VALUES (%s,%s,%s,%s)",
+                c.execute("INSERT INTO users (username,password,email,tracking) VALUES (%s,%s,%s,%s)",
                           (username,password,email,"/introduction-to-python-programming/"))
-                c.commit()
+
+                conn.commit()
                 c.close()
                 conn.close()
                 flash("Registration Successful")
