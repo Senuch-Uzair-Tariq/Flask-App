@@ -1,5 +1,6 @@
 from flask import Flask,render_template,flash,request,url_for,redirect
 from content_management import Content
+from wtforms import StringField,PasswordField,BooleanField,Form,validators
 from dbconnect import connection
 
 TOPIC_DICT=Content()
@@ -45,6 +46,13 @@ def login():
     except Exception as e:
         #flash(e)
         return render_template("login.html",CONEXT=error)
+
+class RegistrationFroms(Form):
+    username=StringField("Username",[validators.Length(min=4,max=20)])
+    email=StringField("Email",[validators.length(min=6,max=20)])
+    password=PasswordField('Password',[validators.DataRequired(),validators.EqualTo('confirm',message="Password must match.")])
+    confirm = PasswordField('Password')
+    accept_tos=BooleanField("I accept the <a href='/tof/'> Terms Of Service</a>",[validators.DataRequired()])
 
 @app.route('/register/',methods=['GET','POST'])
 def register():
