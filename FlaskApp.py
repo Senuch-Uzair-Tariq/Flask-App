@@ -1,7 +1,10 @@
-from flask import Flask,render_template,flash,request,url_for,redirect
+from flask import Flask,render_template,flash,request,url_for,redirect,session
 from content_management import Content
-from wtforms import StringField,PasswordField,BooleanField,Form,validators
+from wtforms import StringField,PasswordField,BooleanField,Form,validators,form
 from dbconnect import connection
+from passlib.hash import sha256_crypt
+import gc
+
 
 TOPIC_DICT=Content()
 
@@ -47,20 +50,47 @@ def login():
         #flash(e)
         return render_template("login.html",CONEXT=error)
 
+
+@app.route('/register/',methods=['GET','POST'])
+def register():
+    try:
+        form=RegistrationFroms(request.form)
+
+        if request.method=='POST' and form.validate():
+            username=form.username.data
+            email=form.email.data
+            password=sha256_crypt.encrypt(str(form.password.data))
+            c,conn=connection()
+
+            x=c.execute("SELECT * FROM users WHERE username=(%s)",(username))
+
+            if len(x)>0:
+                flash("This username is already taken,please choose a different one.")
+                return render_template('register.html',form=form)
+            else:
+                c.execute("INSERT INTO users(username,password,email,tracking) VALUES (%s,%s,%s,%s)",
+                          (username,password,email,"/introduction-to-python-programming/"))
+                c.commit()
+                c.close()
+                conn.close()
+                flash("Registration Successful")
+                gc.collect()
+
+                session['logged_in']=True
+                session['username']=username
+
+                return redirect(url_for('dashboard'))
+        return render_template('register.html',form=form)
+
+    except Exception as e:
+        return str(e)
+
 class RegistrationFroms(Form):
     username=StringField("Username",[validators.Length(min=4,max=20)])
     email=StringField("Email",[validators.length(min=6,max=20)])
     password=PasswordField('Password',[validators.DataRequired(),validators.EqualTo('confirm',message="Password must match.")])
     confirm = PasswordField('Password')
     accept_tos=BooleanField("I accept the <a href='/tof/'> Terms Of Service</a>",[validators.DataRequired()])
-
-@app.route('/register/',methods=['GET','POST'])
-def register():
-    try:
-        c,conn = connection()
-        return "Okay"
-    except Exception as e:
-        return str(e)
 
 @app.errorhandler(404)
 @app.errorhandler(405)
