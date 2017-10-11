@@ -1,4 +1,5 @@
 from flask import Flask,render_template,flash,request,url_for,redirect,session
+from functools import wraps
 from content_management import Content
 from wtforms import StringField,PasswordField,BooleanField,Form,validators,form
 from dbconnect import connection
@@ -12,11 +13,22 @@ app = Flask(__name__)
 
 app.secret_key="Senuch Uzair Tariq"
 
+def login_required(f):
+    @wraps(f)
+    def wrap(*args,**kwargs):
+        if 'logged_in' in session:
+            return f(*args,**kwargs)
+        else:
+            flash('You need to login first')
+            return redirect(url_for('login'))
+    return wrap
+
 @app.route('/')
-def hello_world():
+def homepage():
     return render_template("main.html")
 
 @app.route('/dashboard/')
+@login_required
 def dashboard():
     return render_template("dashboard.html",CONTEXT=TOPIC_DICT)
 
@@ -27,23 +39,39 @@ def slashboard():
     except Exception as e:
         return render_template("500.html",CONTEXT=e)
 
+@app.route('/logout/')
+@login_required
+def logout():
+    session.clear()
+    flash('You have been logged out')
+    gc.collect()
+    return redirect(url_for('homepage'))
+
 @app.route('/login/',methods=['GET','POST'])
 def login():
 
     error=None;
     try:
-
+        c,conn=connection()
         if request.method=='POST':
-            attempted_username=request.form['username']
-            attempted_password=request.form['password']
+            data=c.execute("SELECT * from users WHERE username='"+request.form['username']+"'")
+            data=c.fetchone()[2]
 
-            #flash(attempted_username)
-            #flash(attempted_password)
 
-            if attempted_username=="admin" and attempted_password == "password":
+            if  not data == None and sha256_crypt.verify(request.form['password'],data):
+                session['logged_in']=True
+                session['username']=request.form['username']
+
+                flash("You are logged in")
+
                 return redirect(url_for('dashboard'))
             else:
-                error="Invalid! Credentials."
+                error="Invalid credentials, try again."
+
+            c.close()
+            conn.close()
+            gc.collect()
+
         return render_template('login.html',CONTEXT=error)
 
     except Exception as e:
